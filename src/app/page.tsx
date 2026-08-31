@@ -127,12 +127,12 @@ export default function Home() {
   return (
     <main className="min-h-[100svh] bg-[#f4f0ea] text-[#1f1f1f]">
       <section className="mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-between px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10 lg:px-12">
-        <header className="flex items-center justify-between gap-6">
-          <div className="text-[11px] uppercase tracking-[0.16em] sm:text-xs md:text-sm">
+        <header className="flex items-center justify-between gap-3 sm:gap-6">
+          <div className="text-[10px] uppercase tracking-[0.12em] sm:text-[11px] sm:tracking-[0.16em] md:text-sm">
             Dra. Germânia Bandeira
           </div>
 
-          <div className="text-[10px] uppercase tracking-[0.14em] text-black/45 sm:text-xs">
+          <div className="shrink-0 text-[9px] uppercase tracking-[0.1em] text-black/45 sm:text-[10px] sm:tracking-[0.14em] md:text-xs">
             Discovery
           </div>
         </header>
@@ -142,26 +142,23 @@ export default function Home() {
             Projeto digital
           </p>
 
-          <h1 className="rise rise-delay-1 max-w-[19ch] text-[2.05rem] font-medium leading-[1.08] tracking-[-0.035em] break-words hyphens-auto sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.042em] md:text-[3.5rem] lg:text-[4rem] xl:text-[4.3rem]">
-            Antes de construir o site,
-            <br className="hidden sm:block" />
-            precisamos entender
-            <br className="hidden sm:block" />
-            o que ele deve representar.
+          <h1 className="rise rise-delay-1 max-w-[19ch] break-normal text-[2.25rem] font-medium leading-[1.02] tracking-[-0.035em] hyphens-none sm:text-[3rem] sm:leading-[1.05] sm:tracking-[-0.04em] md:text-[3.8rem] lg:text-[4.5rem] xl:text-[5rem]">
+            Antes de construir o site, precisamos entender
+            <br className="hidden md:block" /> o que ele deve representar.
           </h1>
 
-          <div className="rise rise-delay-2 mt-8 md:mt-9">
-            <p className="max-w-[54ch] text-base leading-8 text-black/60 sm:text-lg">
+          <div className="rise rise-delay-2 mt-7 md:mt-9">
+            <p className="max-w-[54ch] text-[1.05rem] leading-[1.6] text-black/60 sm:text-lg sm:leading-8">
               Esta etapa vai nos ajudar a compreender sua trajetória,
               sua forma de cuidar, seus pacientes e o que você deseja
               construir daqui para frente.
             </p>
 
-            <div className="mt-9 flex flex-col gap-5 sm:mt-10 sm:flex-row sm:items-center sm:gap-7">
+            <div className="mt-8 flex flex-col items-start gap-4 sm:mt-10 sm:flex-row sm:items-center sm:gap-7">
               <button
                 onClick={handleDiscovery}
                 disabled={loading || checkingSession}
-                className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-[#1f1f1f] px-8 text-[0.95rem] font-medium text-[#f4f0ea] transition-colors duration-300 hover:bg-black active:bg-black/85 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-12 sm:w-auto sm:text-sm"
+                className="inline-flex min-h-[44px] w-fit items-center justify-center rounded-full bg-[#1f1f1f] px-7 text-sm font-medium text-[#f4f0ea] transition-colors duration-300 hover:bg-black active:bg-black/85 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-12 sm:px-8 sm:text-sm"
               >
                 {checkingSession
                   ? "Preparando..."
@@ -172,7 +169,7 @@ export default function Home() {
                       : "Começar"}
               </button>
 
-              <span className="max-w-[38ch] text-[0.9rem] leading-6 text-black/45">
+              <span className="max-w-[38ch] text-[0.85rem] leading-5 text-black/45 sm:text-[0.9rem] sm:leading-6">
                 Pode sair quando quiser. Suas respostas ficam salvas e você
                 continua daqui quando voltar.
               </span>

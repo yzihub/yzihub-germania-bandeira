@@ -19,6 +19,45 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Editorial copy must never be split mid-word. On narrow screens a sentence
+   is allowed to take more lines, but no automatic hyphenation and no
+   character-level breaking. `hyphens` inherits, so `html` covers everything;
+   the explicit element list guards against UA stylesheets and any utility
+   class that might reintroduce hyphenation later. */
+html {
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-break: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+li,
+span,
+a,
+button,
+label,
+strong,
+em,
+small,
+input,
+textarea,
+select {
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -26,6 +65,11 @@ body {
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 ::selection {

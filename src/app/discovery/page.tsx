@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
@@ -58,6 +58,15 @@ type SavedAnswer = {
   answered_at: string
 }
 
+type SessionUpload = {
+  upload_id: string
+  question_key: string | null
+  status: string
+  original_filename: string | null
+  mime_type: string | null
+  size_bytes: number | null
+}
+
 type SessionResponse = {
   session: {
     id: string
@@ -67,6 +76,66 @@ type SessionResponse = {
     progress_percent: number
   }
   answers: SavedAnswer[]
+  uploads?: SessionUpload[]
+}
+
+// The upload step accepts many files. `discovery_uploads` stays the source of
+// truth for file metadata; `discovery_answers` only records a light reference.
+type UploadAnswerValue = {
+  status: "ready" | "skipped"
+  upload_ids: string[]
+}
+
+type UploadItemState = "preparing" | "uploading" | "ready" | "error"
+
+type UploadItem = {
+  key: string
+  upload_id: string | null
+  filename: string
+  mime_type: string | null
+  size_bytes: number | null
+  state: UploadItemState
+  message?: string
+}
+
+const ALLOWED_UPLOAD_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "video/mp4",
+  "video/quicktime",
+]
+
+const MAX_UPLOAD_BYTES = 52428800
+
+const UPLOAD_STATE_LABEL: Record<UploadItemState, string> = {
+  preparing: "Preparando...",
+  uploading: "Enviando...",
+  ready: "Enviado",
+  error: "Não enviado",
+}
+
+function buildUploadAnswer(items: UploadItem[]): UploadAnswerValue {
+  const uploadIds = items
+    .filter((item) => item.state === "ready" && item.upload_id)
+    .map((item) => item.upload_id as string)
+
+  return {
+    status: uploadIds.length > 0 ? "ready" : "skipped",
+    upload_ids: uploadIds,
+  }
+}
+
+function makeItemKey() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function formatFileSize(bytes: number | null) {
+  if (!bytes) return ""
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export default function DiscoveryPage() {
@@ -78,6 +147,13 @@ export default function DiscoveryPage() {
 
   const [answers, setAnswers] = useState<Record<string, unknown>>({})
   const [draftValue, setDraftValue] = useState<unknown>("")
+  const [lastResetQuestionId, setLastResetQuestionId] = useState<
+    string | null
+  >(null)
+
+  const [uploadsByQuestion, setUploadsByQuestion] = useState<
+    Record<string, UploadItem[]>
+  >({})
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -129,6 +205,30 @@ export default function DiscoveryPage() {
         }
 
         setAnswers(restoredAnswers)
+
+        // Files already stored in Storage come back from get_discovery_session,
+        // so a resumed session never re-uploads them.
+        const restoredUploads: Record<string, UploadItem[]> = {}
+
+        for (const upload of loadedSession.uploads ?? []) {
+          if (!upload.question_key || upload.status !== "ready") continue
+
+          const bucketList =
+            restoredUploads[upload.question_key] ?? []
+
+          bucketList.push({
+            key: upload.upload_id,
+            upload_id: upload.upload_id,
+            filename: upload.original_filename ?? "Arquivo enviado",
+            mime_type: upload.mime_type,
+            size_bytes: upload.size_bytes,
+            state: "ready",
+          })
+
+          restoredUploads[upload.question_key] = bucketList
+        }
+
+        setUploadsByQuestion(restoredUploads)
 
         if (loadedSession.session.status === "completed") {
           setFinished(true)
@@ -196,24 +296,26 @@ export default function DiscoveryPage() {
     )
   }, [template, currentQuestion])
 
-  useEffect(() => {
-    if (!currentQuestion) return
+  // Reset the draft/upload UI whenever the visible question changes.
+  // Done synchronously during render (not in an effect) to avoid an
+  // extra render pass; this is React's documented pattern for resetting
+  // state when a derived key changes.
+  if (currentQuestion && currentQuestion.id !== lastResetQuestionId) {
+    setLastResetQuestionId(currentQuestion.id)
 
-    const previousValue =
-      answers[currentQuestion.question_key]
+    const previousValue = answers[currentQuestion.question_key]
 
-    if (previousValue !== undefined) {
+    if (currentQuestion.question_type === "upload") {
+      // Upload answers are derived from `uploadsByQuestion` at save time.
+      setDraftValue("")
+    } else if (previousValue !== undefined) {
       setDraftValue(previousValue)
-      return
-    }
-
-    if (currentQuestion.question_type === "multi_select") {
+    } else if (currentQuestion.question_type === "multi_select") {
       setDraftValue([])
-      return
+    } else {
+      setDraftValue("")
     }
-
-    setDraftValue("")
-  }, [currentQuestion, answers])
+  }
 
   const progress =
     questions.length > 0
@@ -224,8 +326,23 @@ export default function DiscoveryPage() {
         )
       : 0
 
+  const currentUploads = currentQuestion
+    ? (uploadsByQuestion[currentQuestion.question_key] ?? [])
+    : []
+
+  const uploadsInFlight = currentUploads.some(
+    (item) => item.state === "preparing" || item.state === "uploading"
+  )
+
   function hasValidAnswer() {
     if (!currentQuestion) return false
+
+    if (currentQuestion.question_type === "upload") {
+      // Optional by design: the respondent may continue with no files at all.
+      if (!currentQuestion.required) return true
+
+      return currentUploads.some((item) => item.state === "ready")
+    }
 
     if (!currentQuestion.required) return true
 
@@ -243,10 +360,20 @@ export default function DiscoveryPage() {
   async function saveAndContinue() {
     if (!currentQuestion || !session) return
 
+    if (uploadsInFlight) {
+      setError("Aguarde o envio dos arquivos terminar.")
+      return
+    }
+
     if (!hasValidAnswer()) {
       setError("Antes de continuar, responda esta pergunta.")
       return
     }
+
+    const valueToSave =
+      currentQuestion.question_type === "upload"
+        ? buildUploadAnswer(currentUploads)
+        : draftValue
 
     try {
       setSaving(true)
@@ -258,7 +385,7 @@ export default function DiscoveryPage() {
           p_session_id: session.sessionId,
           p_resume_token: session.resumeToken,
           p_question_key: currentQuestion.question_key,
-          p_value: draftValue,
+          p_value: valueToSave,
         }
       )
 
@@ -266,7 +393,7 @@ export default function DiscoveryPage() {
 
       setAnswers((current) => ({
         ...current,
-        [currentQuestion.question_key]: draftValue,
+        [currentQuestion.question_key]: valueToSave,
       }))
 
       const isLastQuestion =
@@ -307,6 +434,141 @@ export default function DiscoveryPage() {
       )
     } finally {
       setSaving(false)
+    }
+  }
+
+  function patchUploadItem(
+    questionKey: string,
+    itemKey: string,
+    patch: Partial<UploadItem>
+  ) {
+    setUploadsByQuestion((current) => ({
+      ...current,
+      [questionKey]: (current[questionKey] ?? []).map((item) =>
+        item.key === itemKey ? { ...item, ...patch } : item
+      ),
+    }))
+  }
+
+  // One file at a time, each with its own reserve -> Storage -> finalize cycle.
+  // A failure marks only that file; files already sent are never touched.
+  async function uploadSingleFile(
+    questionKey: string,
+    itemKey: string,
+    file: File
+  ) {
+    if (!session) return
+
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      patchUploadItem(questionKey, itemKey, {
+        state: "error",
+        message: "Esse tipo de arquivo ainda não é aceito.",
+      })
+      return
+    }
+
+    if (file.size <= 0) {
+      patchUploadItem(questionKey, itemKey, {
+        state: "error",
+        message: "Esse arquivo parece estar vazio.",
+      })
+      return
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      patchUploadItem(questionKey, itemKey, {
+        state: "error",
+        message: "Esse arquivo é maior que 50 MB.",
+      })
+      return
+    }
+
+    try {
+      patchUploadItem(questionKey, itemKey, { state: "uploading" })
+
+      const { data: reserved, error: reserveError } =
+        await supabase.rpc("reserve_discovery_upload", {
+          p_session_id: session.sessionId,
+          p_resume_token: session.resumeToken,
+          p_original_filename: file.name,
+          p_mime_type: file.type,
+          p_size_bytes: file.size,
+          p_question_key: questionKey,
+        })
+
+      if (reserveError) throw reserveError
+
+      const { bucket, object_path, upload_id } = reserved as {
+        bucket: string
+        object_path: string
+        upload_id: string
+      }
+
+      const { error: storageError } = await supabase.storage
+        .from(bucket)
+        .upload(object_path, file, {
+          contentType: file.type,
+          upsert: false,
+        })
+
+      if (storageError) throw storageError
+
+      const { data: finalized, error: finalizeError } =
+        await supabase.rpc("finalize_discovery_upload", {
+          p_session_id: session.sessionId,
+          p_resume_token: session.resumeToken,
+          p_upload_id: upload_id,
+        })
+
+      if (finalizeError) throw finalizeError
+
+      patchUploadItem(questionKey, itemKey, {
+        state: "ready",
+        upload_id,
+        filename: finalized?.original_filename ?? file.name,
+        message: undefined,
+      })
+    } catch (err) {
+      console.error(err)
+
+      patchUploadItem(questionKey, itemKey, {
+        state: "error",
+        message: "Não conseguimos enviar este arquivo. Tente novamente.",
+      })
+    }
+  }
+
+  async function handleFilesSelected(files: File[]) {
+    if (!currentQuestion || !session) return
+
+    const questionKey = currentQuestion.question_key
+
+    if (files.length === 0) return
+
+    setError(null)
+
+    const queued = files.map((file) => ({
+      file,
+      item: {
+        key: makeItemKey(),
+        upload_id: null,
+        filename: file.name,
+        mime_type: file.type || null,
+        size_bytes: file.size,
+        state: "preparing",
+      } as UploadItem,
+    }))
+
+    setUploadsByQuestion((current) => ({
+      ...current,
+      [questionKey]: [
+        ...(current[questionKey] ?? []),
+        ...queued.map((entry) => entry.item),
+      ],
+    }))
+
+    for (const entry of queued) {
+      await uploadSingleFile(questionKey, entry.item.key, entry.file)
     }
   }
 
@@ -388,18 +650,32 @@ export default function DiscoveryPage() {
           <div className="flex flex-1 items-center py-16">
             <div className="w-full max-w-3xl">
               <p className="rise text-[11px] uppercase tracking-[0.2em] text-black/40">
-                Obrigado
+                Discovery concluído
               </p>
 
-              <h1 className="rise rise-delay-1 mt-6 max-w-[15ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-words hyphens-auto sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
-                Agora temos uma base muito mais clara para começar.
+              <h1 className="rise rise-delay-1 mt-6 max-w-[15ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-normal hyphens-none sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
+                Agora começa a construção.
               </h1>
 
-              <div className="rise rise-delay-2 mt-9">
-                <p className="max-w-[54ch] text-base leading-8 text-black/55 sm:text-lg">
-                  Suas respostas vão nos ajudar a transformar sua
-                  história, sua forma de cuidar e seus objetivos em um
-                  projeto que realmente represente você.
+              <div className="rise rise-delay-2 mt-9 grid max-w-[54ch] gap-5 sm:mt-11 sm:gap-6">
+                <p className="text-base leading-8 text-black/55 sm:text-lg">
+                  Suas respostas são o ponto de partida para transformar o
+                  que entendemos em estratégia, estrutura e experiência.
+                </p>
+
+                <p className="text-base leading-8 text-black/55 sm:text-lg">
+                  Daqui em diante, seguimos um processo contínuo: construir,
+                  publicar, observar e evoluir.
+                </p>
+
+                <p className="text-base leading-8 text-black/55 sm:text-lg">
+                  Sem fórmulas prontas ou resultados prometidos. Com método,
+                  consistência e decisões guiadas pelo que aprendermos ao
+                  longo da jornada.
+                </p>
+
+                <p className="mt-4 border-t border-black/10 pt-7 text-base leading-8 text-black/70 sm:mt-6 sm:text-lg">
+                  Obrigada por chegar até aqui.
                 </p>
               </div>
             </div>
@@ -445,7 +721,7 @@ export default function DiscoveryPage() {
                 Próximo capítulo
               </p>
 
-              <h1 className="rise rise-delay-1 mt-6 max-w-[16ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-words hyphens-auto sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
+              <h1 className="rise rise-delay-1 mt-6 max-w-[16ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-normal hyphens-none sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
                 {chapter?.title ?? "Vamos continuar"}
               </h1>
 
@@ -487,7 +763,7 @@ export default function DiscoveryPage() {
               {chapter?.title ?? "Discovery"}
             </p>
 
-            <h1 className="mt-4 max-w-[22ch] text-[1.6rem] font-medium leading-[1.16] tracking-[-0.028em] break-words hyphens-auto sm:mt-5 sm:text-[2.1rem] sm:tracking-[-0.032em] md:text-[2.5rem] lg:text-[2.9rem]">
+            <h1 className="mt-4 max-w-[22ch] text-[1.6rem] font-medium leading-[1.16] tracking-[-0.028em] break-normal hyphens-none sm:mt-5 sm:text-[2.1rem] sm:tracking-[-0.032em] md:text-[2.5rem] lg:text-[2.9rem]">
               {currentQuestion.prompt}
             </h1>
 
@@ -503,6 +779,8 @@ export default function DiscoveryPage() {
                 value={draftValue}
                 setValue={setDraftValue}
                 toggleOption={toggleOption}
+                uploadItems={currentUploads}
+                onFilesSelected={handleFilesSelected}
               />
             </div>
 
@@ -596,12 +874,26 @@ function QuestionField({
   value,
   setValue,
   toggleOption,
+  uploadItems,
+  onFilesSelected,
 }: {
   question: Question
   value: unknown
   setValue: (value: unknown) => void
   toggleOption: (option: string) => void
+  uploadItems: UploadItem[]
+  onFilesSelected: (files: File[]) => void
 }) {
+  if (question.question_type === "upload") {
+    return (
+      <UploadField
+        question={question}
+        items={uploadItems}
+        onFilesSelected={onFilesSelected}
+      />
+    )
+  }
+
   if (question.question_type === "long_text") {
     return (
       <textarea
@@ -712,6 +1004,104 @@ function QuestionField({
 
 const FIELD =
   "w-full bg-transparent outline-none transition-colors duration-300 caret-[#9a6a4f] placeholder:text-black/25 focus:placeholder:text-black/40"
+
+function metadataText(
+  metadata: Record<string, unknown>,
+  key: string,
+  fallback: string
+) {
+  const raw = metadata?.[key]
+  return typeof raw === "string" && raw.trim().length > 0 ? raw : fallback
+}
+
+function UploadField({
+  question,
+  items,
+  onFilesSelected,
+}: {
+  question: Question
+  items: UploadItem[]
+  onFilesSelected: (files: File[]) => void
+}) {
+  const metadata = question.metadata ?? {}
+
+  const ctaLabel = metadataText(
+    metadata,
+    items.length > 0 ? "cta_label_more" : "cta_label",
+    items.length > 0 ? "Adicionar mais arquivos" : "Adicionar arquivos"
+  )
+
+  const acceptHint = metadataText(
+    metadata,
+    "accept_hint",
+    "PDF, DOCX, JPG, PNG, WEBP, MP4 ou MOV · até 50 MB por arquivo"
+  )
+
+  return (
+    <div>
+      {items.length > 0 && (
+        <ul className="mb-6 grid gap-2.5">
+          {items.map((item) => (
+            <li
+              key={item.key}
+              className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-black/[0.07] pb-2.5"
+            >
+              <span className="min-w-0 text-[0.95rem] leading-6 text-black/70">
+                {item.filename}
+                {item.size_bytes ? (
+                  <span className="text-black/35">
+                    {" · "}
+                    {formatFileSize(item.size_bytes)}
+                  </span>
+                ) : null}
+              </span>
+
+              <span
+                className={`shrink-0 text-[11px] uppercase tracking-[0.14em] ${
+                  item.state === "error"
+                    ? "text-[#8a2f2f]"
+                    : item.state === "ready"
+                      ? "text-[#9a6a4f]"
+                      : "text-black/35"
+                }`}
+              >
+                {UPLOAD_STATE_LABEL[item.state]}
+              </span>
+
+              {item.state === "error" && item.message && (
+                <p
+                  role="alert"
+                  className="w-full text-sm leading-6 text-[#8a2f2f]"
+                >
+                  {item.message}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <label className="inline-flex w-fit cursor-pointer touch-manipulation items-center gap-2 rounded-full border border-black/15 px-6 py-3 text-sm text-black/70 transition-colors duration-300 hover:border-black/30 hover:text-black">
+        {ctaLabel}
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          accept={ALLOWED_UPLOAD_TYPES.join(",")}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? [])
+            event.target.value = ""
+            if (files.length > 0) onFilesSelected(files)
+          }}
+        />
+      </label>
+
+      <p className="mt-4 text-[11px] uppercase tracking-[0.14em] text-black/35">
+        {acceptHint}
+      </p>
+    </div>
+  )
+}
 
 function OptionCard({
   label,
