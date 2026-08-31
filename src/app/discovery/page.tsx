@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { Mark } from "@/components/Mark"
 import { supabase } from "@/lib/supabase/client"
 
 type Question = {
@@ -625,57 +626,46 @@ export default function DiscoveryPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f0ea]">
-        <p className="rise text-[11px] uppercase tracking-[0.2em] text-black/40">
-          Preparando tudo para você...
-        </p>
+      <main className="flex min-h-[100svh] items-center justify-center bg-paper px-[var(--shell-pad)]">
+        <p className="t-eyebrow rise">Preparando tudo para você...</p>
       </main>
     )
   }
 
   if (finished) {
     return (
-      <main className="min-h-[100svh] bg-[#f4f0ea] text-[#1f1f1f]">
-        <section className={SHELL}>
-          <header className="flex items-center justify-between gap-6 border-b border-black/10 pb-5">
-            <span className="text-[11px] uppercase tracking-[0.16em] sm:text-xs md:text-sm">
-              Dra. Germânia Bandeira
-            </span>
-
-            <span className="text-[10px] uppercase tracking-[0.14em] text-black/40 sm:text-xs">
-              Concluído
-            </span>
+      <main className="min-h-[100svh] bg-paper text-ink">
+        <section className="shell">
+          <header className="t-eyebrow flex items-center justify-between gap-6 border-b border-ink-10 pb-[var(--space-3)]">
+            <span>Dra. Germânia Bandeira</span>
+            <span>Concluído</span>
           </header>
 
-          <div className="flex flex-1 items-center py-16">
-            <div className="w-full max-w-3xl">
-              <p className="rise text-[11px] uppercase tracking-[0.2em] text-black/40">
-                Discovery concluído
+          {/* The closing gets the widest air in the whole flow: the sense of a
+              step won comes from the room around it, not from a badge. */}
+          <div className="flex flex-1 flex-col justify-center py-[var(--space-6)]">
+            <div className="column">
+              <Mark variant="continued" className="rise" />
+
+              <p className="t-eyebrow rise rise-delay-1 mt-[var(--space-3)]">
+                Uma etapa termina. Outra começa.
               </p>
 
-              <h1 className="rise rise-delay-1 mt-6 max-w-[15ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-normal hyphens-none sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
-                Agora começa a construção.
+              <h1 className="t-chapter rise rise-delay-1 mt-[var(--space-3)] max-w-[18ch] md:mt-[var(--space-4)]">
+                Compreender era o primeiro passo. Agora podemos construir.
               </h1>
 
-              <div className="rise rise-delay-2 mt-9 grid max-w-[54ch] gap-5 sm:mt-11 sm:gap-6">
-                <p className="text-base leading-8 text-black/55 sm:text-lg">
-                  Suas respostas são o ponto de partida para transformar o
-                  que entendemos em estratégia, estrutura e experiência.
-                </p>
+              <p className="t-body rise rise-delay-2 mt-[var(--space-5)]">
+                O que foi reunido aqui passa a orientar as próximas decisões do
+                projeto — do que precisa ser dito à forma como tudo isso será
+                organizado e colocado no mundo.
+              </p>
 
-                <p className="text-base leading-8 text-black/55 sm:text-lg">
-                  Daqui em diante, seguimos um processo contínuo: construir,
-                  publicar, observar e evoluir.
-                </p>
+              <div className="rise rise-delay-3 mt-[var(--space-5)]">
+                <hr className="rule w-16" />
 
-                <p className="text-base leading-8 text-black/55 sm:text-lg">
-                  Sem fórmulas prontas ou resultados prometidos. Com método,
-                  consistência e decisões guiadas pelo que aprendermos ao
-                  longo da jornada.
-                </p>
-
-                <p className="mt-4 border-t border-black/10 pt-7 text-base leading-8 text-black/70 sm:mt-6 sm:text-lg">
-                  Obrigada por chegar até aqui.
+                <p className="t-closing mt-[var(--space-4)]">
+                  Construir, observar, aprender e continuar evoluindo.
                 </p>
               </div>
             </div>
@@ -687,10 +677,10 @@ export default function DiscoveryPage() {
 
   if (error && !template) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f0ea] px-6">
+      <main className="flex min-h-[100svh] items-center justify-center bg-paper px-[var(--shell-pad)]">
         <p
           role="alert"
-          className="max-w-xl text-center text-sm leading-6 text-[#8a2f2f]"
+          className="max-w-[46ch] text-center text-sm leading-6 text-danger"
         >
           {error}
         </p>
@@ -704,40 +694,43 @@ export default function DiscoveryPage() {
 
   if (showChapterIntro) {
     return (
-      <main className="min-h-[100svh] bg-[#f4f0ea] text-[#1f1f1f]">
-        <section className={SHELL}>
+      <main className="min-h-[100svh] bg-paper text-ink">
+        <section className="shell">
           <Header
             progress={progress}
             current={currentIndex + 1}
             total={questions.length}
           />
 
+          {/* A chapter is a page turn, not a step: serif at chapter scale, a
+              short rule opening the block, more air than any question, and a
+              hairline action instead of the ink pill that commits answers. */}
           <div
             key={currentQuestion.section_key}
-            className="flex flex-1 items-center py-16 sm:py-20"
+            className="flex flex-1 flex-col justify-center py-[var(--space-6)]"
           >
-            <div className="w-full max-w-3xl">
-              <p className="rise text-[11px] uppercase tracking-[0.2em] text-black/40">
+            <div className="column">
+              <hr className="rule rise w-16" />
+
+              <p className="t-eyebrow rise rise-delay-1 mt-[var(--space-3)]">
                 Próximo capítulo
               </p>
 
-              <h1 className="rise rise-delay-1 mt-6 max-w-[16ch] text-[2.05rem] font-medium leading-[1.06] tracking-[-0.035em] break-normal hyphens-none sm:text-[2.9rem] sm:leading-[1.02] sm:tracking-[-0.04em] md:text-[3.5rem] lg:text-[4rem]">
+              <h1 className="t-chapter rise rise-delay-1 mt-[var(--space-3)] md:mt-[var(--space-4)]">
                 {chapter?.title ?? "Vamos continuar"}
               </h1>
 
-              <div className="rise rise-delay-2 mt-9">
-                <p className="max-w-[54ch] text-base leading-8 text-black/55 sm:text-lg">
-                  {chapter?.intro ??
-                    "As próximas perguntas vão nos ajudar a conhecer melhor você e o seu projeto."}
-                </p>
+              <p className="t-body rise rise-delay-2 mt-[var(--space-5)]">
+                {chapter?.intro ??
+                  "As próximas perguntas vão nos ajudar a conhecer melhor você e o seu projeto."}
+              </p>
 
-                <button
-                  onClick={() => setShowChapterIntro(false)}
-                  className={PRIMARY_BUTTON + " mt-10"}
-                >
-                  Continuar
-                </button>
-              </div>
+              <button
+                onClick={() => setShowChapterIntro(false)}
+                className="btn-line rise rise-delay-3 mt-[var(--space-5)]"
+              >
+                Continuar
+              </button>
             </div>
           </div>
         </section>
@@ -746,34 +739,32 @@ export default function DiscoveryPage() {
   }
 
   return (
-    <main className="min-h-[100svh] bg-[#f4f0ea] text-[#1f1f1f]">
-      <section className={SHELL}>
+    <main className="min-h-[100svh] bg-paper text-ink">
+      <section className="shell">
         <Header
           progress={progress}
           current={currentIndex + 1}
           total={questions.length}
         />
 
-        <div className="flex flex-1 items-center py-8 sm:py-10 lg:py-12">
-          <div
-            key={currentQuestion.id}
-            className="rise w-full max-w-3xl"
-          >
-            <p className="text-[11px] uppercase tracking-[0.18em] text-black/40">
-              {chapter?.title ?? "Discovery"}
-            </p>
+        {/* Questions sit slightly above centre so a one-line prompt is never
+            marooned in the middle of an empty page, and a long one never
+            pushes its own answer field below the fold. */}
+        <div className="flex flex-1 flex-col justify-center py-[var(--space-5)] lg:pb-[7vh]">
+          <div key={currentQuestion.id} className="rise column">
+            <p className="t-eyebrow">{chapter?.title ?? "Discovery"}</p>
 
-            <h1 className="mt-4 max-w-[22ch] text-[1.6rem] font-medium leading-[1.16] tracking-[-0.028em] break-normal hyphens-none sm:mt-5 sm:text-[2.1rem] sm:tracking-[-0.032em] md:text-[2.5rem] lg:text-[2.9rem]">
+            <h1 className="t-question mt-[var(--space-3)]">
               {currentQuestion.prompt}
             </h1>
 
             {currentQuestion.help_text && (
-              <p className="mt-5 max-w-[52ch] text-[0.95rem] leading-7 text-black/45 sm:text-base">
+              <p className="t-help mt-[var(--space-2)]">
                 {currentQuestion.help_text}
               </p>
             )}
 
-            <div className="mt-7 sm:mt-8">
+            <div className="mt-[var(--space-4)]">
               <QuestionField
                 question={currentQuestion}
                 value={draftValue}
@@ -787,31 +778,31 @@ export default function DiscoveryPage() {
             {error && (
               <p
                 role="alert"
-                className="mt-5 text-sm leading-6 text-[#8a2f2f]"
+                className="mt-[var(--space-3)] text-sm leading-6 text-danger"
               >
                 {error}
               </p>
             )}
 
-            <div className="mt-8 flex flex-col-reverse items-stretch gap-2 sm:mt-9 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <button
-                onClick={goBack}
-                disabled={saving}
-                className="inline-flex min-h-11 items-center justify-center self-stretch px-2 text-sm text-black/45 underline-offset-[6px] transition-colors duration-300 hover:text-black hover:underline disabled:opacity-40 sm:min-h-0 sm:self-auto sm:px-0"
-              >
-                Voltar
-              </button>
-
+            <div className="mt-[var(--space-5)] flex flex-col-reverse items-stretch gap-[var(--space-1)] sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-6">
               <button
                 onClick={saveAndContinue}
                 disabled={saving}
-                className={PRIMARY_BUTTON}
+                className="btn-ink"
               >
                 {saving
                   ? "Salvando..."
                   : currentIndex === questions.length - 1
                     ? "Finalizar"
                     : "Continuar"}
+              </button>
+
+              <button
+                onClick={goBack}
+                disabled={saving}
+                className="btn-quiet self-center sm:self-auto"
+              >
+                Voltar
               </button>
             </div>
           </div>
@@ -820,12 +811,6 @@ export default function DiscoveryPage() {
     </main>
   )
 }
-
-const SHELL =
-  "mx-auto flex min-h-[100svh] w-full max-w-5xl flex-col px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10 lg:px-12"
-
-const PRIMARY_BUTTON =
-  "inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-[#1f1f1f] px-8 text-[0.95rem] font-medium text-[#f4f0ea] transition-colors duration-300 hover:bg-black active:bg-black/85 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-12 sm:w-auto sm:text-sm"
 
 function Header({
   progress,
@@ -838,28 +823,28 @@ function Header({
 }) {
   return (
     <header>
-      <div className="flex items-center justify-between gap-6 pb-4">
-        <span className="text-[11px] uppercase tracking-[0.16em] sm:text-xs md:text-sm">
-          Dra. Germânia Bandeira
-        </span>
+      <div className="t-eyebrow flex items-center justify-between gap-6 pb-[var(--space-2)]">
+        <span>Dra. Germânia Bandeira</span>
 
-        <span className="text-[10px] uppercase tracking-[0.14em] tabular-nums text-black/40 sm:text-xs">
-          <span className="text-black/70">{current}</span>
-          <span className="mx-1.5 text-black/25">/</span>
+        <span className="tabular-nums">
+          <span className="text-ink">{current}</span>
+          <span className="mx-1.5 text-ink-28">/</span>
           {total}
         </span>
       </div>
 
+      {/* A published rule, not an app progress bar: 1px across the full
+          measure of the page, advancing in the brand accent. */}
       <div
         role="progressbar"
         aria-valuenow={progress}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Progresso do discovery"
-        className="h-px w-full bg-black/10"
+        className="h-px w-full bg-ink-10"
       >
         <div
-          className="h-px bg-[#9a6a4f] transition-[width] duration-700 ease-out"
+          className="h-px bg-accent transition-[width] duration-700 ease-out"
           style={{
             width: `${Math.max(1, progress)}%`,
           }}
@@ -902,8 +887,8 @@ function QuestionField({
           setValue(event.target.value)
         }
         placeholder="Escreva com suas palavras..."
-        rows={4}
-        className={`${FIELD} resize-none text-[1.0625rem] leading-8 sm:text-lg`}
+        rows={5}
+        className="field resize-none text-[1.0625rem] leading-[1.75] sm:text-[1.125rem]"
       />
     )
   }
@@ -927,16 +912,16 @@ function QuestionField({
           setValue(event.target.value)
         }
         placeholder="Escreva aqui..."
-        className={`${FIELD} text-lg leading-8 sm:text-xl`}
+        className="field text-[1.1875rem] leading-[1.6] sm:text-[1.3125rem]"
       />
     )
   }
 
   if (question.question_type === "single_select") {
     return (
-      <div className="grid gap-2.5">
+      <div className="border-t border-ink-10">
         {question.options.map((option) => (
-          <OptionCard
+          <OptionRow
             key={option}
             label={option}
             selected={value === option}
@@ -955,9 +940,9 @@ function QuestionField({
 
     return (
       <div>
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid border-t border-ink-10 sm:grid-cols-2 sm:gap-x-10">
           {question.options.map((option) => (
-            <OptionCard
+            <OptionRow
               key={option}
               label={option}
               selected={selectedValues.includes(option)}
@@ -967,7 +952,7 @@ function QuestionField({
           ))}
         </div>
 
-        <p className="mt-5 text-[11px] uppercase tracking-[0.14em] text-black/35">
+        <p className="t-note mt-[var(--space-3)]">
           Você pode escolher mais de uma opção.
         </p>
       </div>
@@ -976,12 +961,12 @@ function QuestionField({
 
   if (question.question_type === "boolean") {
     return (
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid border-t border-ink-10 sm:grid-cols-2 sm:gap-x-10">
         {[
           ["Sim", true],
           ["Não", false],
         ].map(([label, optionValue]) => (
-          <OptionCard
+          <OptionRow
             key={String(label)}
             label={String(label)}
             selected={value === optionValue}
@@ -997,13 +982,10 @@ function QuestionField({
     <input
       value={typeof value === "string" ? value : ""}
       onChange={(event) => setValue(event.target.value)}
-      className={`${FIELD} text-lg leading-8 sm:text-xl`}
+      className="field text-[1.1875rem] leading-[1.6] sm:text-[1.3125rem]"
     />
   )
 }
-
-const FIELD =
-  "w-full bg-transparent outline-none transition-colors duration-300 caret-[#9a6a4f] placeholder:text-black/25 focus:placeholder:text-black/40"
 
 function metadataText(
   metadata: Record<string, unknown>,
@@ -1040,16 +1022,16 @@ function UploadField({
   return (
     <div>
       {items.length > 0 && (
-        <ul className="mb-6 grid gap-2.5">
+        <ul className="mb-[var(--space-4)] border-t border-ink-10">
           {items.map((item) => (
             <li
               key={item.key}
-              className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-black/[0.07] pb-2.5"
+              className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-ink-10 py-[0.875rem]"
             >
-              <span className="min-w-0 text-[0.95rem] leading-6 text-black/70">
+              <span className="min-w-0 text-[1rem] leading-6 text-ink-80">
                 {item.filename}
                 {item.size_bytes ? (
-                  <span className="text-black/35">
+                  <span className="text-ink-65">
                     {" · "}
                     {formatFileSize(item.size_bytes)}
                   </span>
@@ -1057,22 +1039,19 @@ function UploadField({
               </span>
 
               <span
-                className={`shrink-0 text-[11px] uppercase tracking-[0.14em] ${
+                className={`t-eyebrow shrink-0 ${
                   item.state === "error"
-                    ? "text-[#8a2f2f]"
+                    ? "text-danger"
                     : item.state === "ready"
-                      ? "text-[#9a6a4f]"
-                      : "text-black/35"
+                      ? "text-accent-ink"
+                      : ""
                 }`}
               >
                 {UPLOAD_STATE_LABEL[item.state]}
               </span>
 
               {item.state === "error" && item.message && (
-                <p
-                  role="alert"
-                  className="w-full text-sm leading-6 text-[#8a2f2f]"
-                >
+                <p role="alert" className="w-full text-sm leading-6 text-danger">
                   {item.message}
                 </p>
               )}
@@ -1081,12 +1060,12 @@ function UploadField({
         </ul>
       )}
 
-      <label className="inline-flex w-fit cursor-pointer touch-manipulation items-center gap-2 rounded-full border border-black/15 px-6 py-3 text-sm text-black/70 transition-colors duration-300 hover:border-black/30 hover:text-black">
+      <label className="btn-line touch-manipulation">
         {ctaLabel}
         <input
           type="file"
           multiple
-          className="hidden"
+          className="file-input"
           accept={ALLOWED_UPLOAD_TYPES.join(",")}
           onChange={(event) => {
             const files = Array.from(event.target.files ?? [])
@@ -1096,14 +1075,12 @@ function UploadField({
         />
       </label>
 
-      <p className="mt-4 text-[11px] uppercase tracking-[0.14em] text-black/35">
-        {acceptHint}
-      </p>
+      <p className="t-note mt-[var(--space-3)] max-w-[46ch]">{acceptHint}</p>
     </div>
   )
 }
 
-function OptionCard({
+function OptionRow({
   label,
   selected,
   marker,
@@ -1119,26 +1096,16 @@ function OptionCard({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`group flex w-full touch-manipulation items-start gap-3.5 rounded-xl border px-4 py-4 text-left text-[0.975rem] leading-6 transition-all duration-300 sm:px-5 ${
-        selected
-          ? "border-[#9a6a4f]/55 bg-[#9a6a4f]/[0.07]"
-          : "border-black/10 bg-white/25 hover:border-black/25 hover:bg-white/45"
-      }`}
+      className="option-row touch-manipulation"
     >
       <span
         aria-hidden
-        className={`mt-[0.4rem] h-2.5 w-2.5 shrink-0 border transition-all duration-300 ${
-          marker === "round" ? "rounded-full" : "rounded-[3px]"
-        } ${
-          selected
-            ? "border-[#9a6a4f] bg-[#9a6a4f]"
-            : "border-black/25 bg-transparent group-hover:border-black/40"
+        className={`option-mark ${
+          marker === "round" ? "rounded-full" : "rounded-[2px]"
         }`}
       />
 
-      <span className={selected ? "text-[#1f1f1f]" : "text-black/75"}>
-        {label}
-      </span>
+      <span>{label}</span>
     </button>
   )
 }

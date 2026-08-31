@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { Mark } from "@/components/Mark"
 import { supabase } from "@/lib/supabase/client"
 
 const STORAGE_KEY = "germania_discovery_session"
@@ -125,40 +126,35 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-[100svh] bg-[#f4f0ea] text-[#1f1f1f]">
-      <section className="mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-between px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10 lg:px-12">
-        <header className="flex items-center justify-between gap-3 sm:gap-6">
-          <div className="text-[10px] uppercase tracking-[0.12em] sm:text-[11px] sm:tracking-[0.16em] md:text-sm">
-            Dra. Germânia Bandeira
-          </div>
+    <main className="min-h-[100svh] bg-paper text-ink">
+      <section className="shell">
+        <header className="t-eyebrow">Dra. Germânia Bandeira</header>
 
-          <div className="shrink-0 text-[9px] uppercase tracking-[0.1em] text-black/45 sm:text-[10px] sm:tracking-[0.14em] md:text-xs">
-            Discovery
-          </div>
-        </header>
+        {/* The opening is a cover: air above, the block settling low on wide
+            screens, the footer holding the base line. */}
+        <div className="flex flex-1 flex-col justify-center py-[var(--space-3)] sm:py-[var(--space-5)]">
+          <div>
+            <Mark className="rise" />
 
-        <div className="max-w-4xl py-12 sm:py-16 md:py-20 lg:py-24">
-          <p className="rise mb-4 text-[11px] uppercase tracking-[0.18em] text-black/45 sm:mb-5 sm:text-xs">
-            Projeto digital
-          </p>
-
-          <h1 className="rise rise-delay-1 max-w-[19ch] break-normal text-[2.25rem] font-medium leading-[1.02] tracking-[-0.035em] hyphens-none sm:text-[3rem] sm:leading-[1.05] sm:tracking-[-0.04em] md:text-[3.8rem] lg:text-[4.5rem] xl:text-[5rem]">
-            Antes de construir o site, precisamos entender
-            <br className="hidden md:block" /> o que ele deve representar.
-          </h1>
-
-          <div className="rise rise-delay-2 mt-7 md:mt-9">
-            <p className="max-w-[54ch] text-[1.05rem] leading-[1.6] text-black/60 sm:text-lg sm:leading-8">
-              Esta etapa vai nos ajudar a compreender sua trajetória,
-              sua forma de cuidar, seus pacientes e o que você deseja
-              construir daqui para frente.
+            <p className="t-eyebrow rise rise-delay-1 mt-[var(--space-3)]">
+              Discovery
             </p>
 
-            <div className="mt-8 flex flex-col items-start gap-4 sm:mt-10 sm:flex-row sm:items-center sm:gap-7">
+            <h1 className="t-display rise rise-delay-1 mt-[var(--space-3)] md:mt-[var(--space-4)]">
+              Primeiro, precisamos encontrar o que é essencial.
+            </h1>
+
+            <p className="t-body rise rise-delay-2 mt-[var(--space-4)] sm:mt-[var(--space-5)]">
+              Estas perguntas foram pensadas para revelar o que deve orientar
+              o projeto — da sua trajetória à forma como você cuida, comunica
+              e deseja construir sua presença no digital.
+            </p>
+
+            <div className="rise rise-delay-3 mt-[var(--space-4)] sm:mt-[var(--space-5)]">
               <button
                 onClick={handleDiscovery}
                 disabled={loading || checkingSession}
-                className="inline-flex min-h-[44px] w-fit items-center justify-center rounded-full bg-[#1f1f1f] px-7 text-sm font-medium text-[#f4f0ea] transition-colors duration-300 hover:bg-black active:bg-black/85 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-12 sm:px-8 sm:text-sm"
+                className="btn-ink"
               >
                 {checkingSession
                   ? "Preparando..."
@@ -169,16 +165,16 @@ export default function Home() {
                       : "Começar"}
               </button>
 
-              <span className="max-w-[38ch] text-[0.85rem] leading-5 text-black/45 sm:text-[0.9rem] sm:leading-6">
+              <p className="t-note mt-[var(--space-3)] max-w-[var(--measure-note)]">
                 Pode sair quando quiser. Suas respostas ficam salvas e você
                 continua daqui quando voltar.
-              </span>
+              </p>
             </div>
 
             {error && (
               <p
                 role="alert"
-                className="mt-6 max-w-xl text-sm leading-6 text-[#8a2f2f]"
+                className="mt-[var(--space-3)] max-w-[46ch] text-sm leading-6 text-danger"
               >
                 {error}
               </p>
@@ -186,9 +182,11 @@ export default function Home() {
           </div>
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-black/10 pt-5 text-[11px] text-black/40 sm:text-xs md:flex-row md:items-center md:justify-between">
-          <span>YZIHUB</span>
-          <span>Discovery estratégico · Dra. Germânia Bandeira</span>
+        <footer className="flex flex-col gap-1 border-t border-ink-10 pt-[var(--space-3)] sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+          <span className="t-eyebrow">YZIHUB</span>
+          <span className="t-note">
+            Discovery estratégico · Dra. Germânia Bandeira
+          </span>
         </footer>
       </section>
     </main>
