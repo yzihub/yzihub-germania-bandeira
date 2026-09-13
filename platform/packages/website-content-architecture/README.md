@@ -1,40 +1,70 @@
-# website-content-architecture
+# @dra-germania/public-website-content-architecture
 
 Arquitetura de conteúdo e política de publicação do site público da Dra. Germânia.
 
-## Consumidor principal
+Pacote autocontido — sem dependências externas. Consumidor principal futuro: `platform/apps/website`.
 
-Site público (`apps/website/` — futuro).
+## Estrutura
 
-## Função
+```text
+src/
+├── dra-germania-public-website-content-types.ts   # tipos, enums, invariantes
+├── dra-germania-public-website-content-nodes.ts   # 25 nós canônicos
+├── dra-germania-public-website-publication-policy.ts  # seletores e grafos
+└── index.ts                                       # API pública
 
-Materializa localmente o Semantic Content Map aprovado no Notion como fonte técnica tipada, versionável e independente de UI, rotas ou runtime.
+tests/
+├── dra-germania-public-website-content-architecture.test.mjs
+├── dra-germania-public-website-preview-graph.test.mjs
+├── dra-germania-public-website-production-graph.test.mjs
+└── fixtures/graph-test-nodes.mjs
+```
 
-## O que contém
+## Executar testes locais
 
-- `src/dra-germania-public-website-content-architecture.ts` — 25 nós de conteúdo do site público, enums, tipos exportados
-- `tests/dra-germania-public-website-content-architecture.test.mjs` — validação de integridade dos nós
+A partir deste diretório:
+
+```bash
+npm test
+```
+
+Ou diretamente:
+
+```bash
+node --test tests/*.test.mjs
+```
+
+## API pública
+
+| Export | Responsabilidade |
+|--------|------------------|
+| `draGermaniaPublicWebsiteContentNodes` | Semantic Content Map (25 nós) |
+| `deriveDraGermaniaPublicWebsitePreviewSiteGraph` | Preview Site Graph |
+| `deriveDraGermaniaPublicWebsitePublicSiteGraph` | Public Site Graph |
+| `isDraGermaniaPublicWebsiteNodeEligibleForPreview` | Elegibilidade preview |
+| `isDraGermaniaPublicWebsiteNodeEligibleForProduction` | Elegibilidade produção |
+| `validateDraGermaniaPublicWebsiteContentArchitecture` | Validação estrutural |
+
+## Grafos derivados
+
+| Grafo | Finalidade | Estado atual |
+|-------|------------|--------------|
+| Semantic Content Map | Fonte canônica completa | 25 nós |
+| Preview Site Graph | Desenvolvimento e revisão | 14 nós (`draft`) |
+| Public Site Graph | Produção pública | **vazio** (correto) |
 
 ## O que não contém
 
-- Rotas Next.js
+- Rotas Next.js ou app em `apps/website`
 - Componentes React
-- Public Site Graph (Lote 2)
 - Persistência Supabase
 - Sitemap, robots, schema runtime
-- Lógica de renderização ou conversão
+- Conexão com Notion ou banco
 
 ## Relação com o Notion
 
-O Notion permanece como fonte estratégica de verdade (Fases 06–11). Este pacote não redesenha a estratégia — apenas materializa localmente o que foi aprovado, com `source_refs` apontando para as fases relevantes.
+O Notion permanece como fonte estratégica de verdade (Fases 06–11). Este pacote materializa localmente o aprovado, com `source_refs` apontando para as fases relevantes.
 
-## Semantic Content Map vs Public Site Graph
+## Estado
 
-| Conceito | Conteúdo | Status |
-|----------|----------|--------|
-| Semantic Content Map | Todos os 25 nós (`draft`, `planned`, `hold`) | Implementado neste pacote |
-| Public Site Graph | Somente `published + indexable` | Ainda não implementado (Lote 2) |
-
-## Estado atual
-
-Contrato tipado entregue no Lote 1 e organizado nesta unidade. **Ainda não conectado ao runtime** — nenhum import em `src/app/` ou componente de produção.
+Lote 2 concluído — pacote autocontido com Preview Site Graph e Public Site Graph. **Ainda não conectado ao runtime.**

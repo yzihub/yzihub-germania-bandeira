@@ -1,0 +1,10 @@
+{
+  "name": "@dra-germania/public-website-content-architecture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Arquitetura de conteúdo e política de publicação do site público da Dra. Germânia.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
